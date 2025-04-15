@@ -4,33 +4,80 @@
 
 # EKS Project Deployment Commands Chart
 
-# EKS Project Deployment Commands Chart
+I'll provide you with a comprehensive step-by-step guide for deploying your EKS application with Terraform, formatted in a chart similar to your example.
+
+# Complete Deployment Guide for EKS Kubernetes Project
 
 | Step | Command | Purpose |
 |------|---------|---------|
-| **1** | `git clone https://github.com/yourusername/eks-kubernetes-project.git` | Get project code |
+| **1** | `git clone https://github.com/yourusername/eks-kubernetes-project.git` | Clone the project repository |
 | | `cd eks-kubernetes-project` | Navigate to project directory |
-| **2** | `export AWS_ACCESS_KEY_ID="your-access-key"` | Configure AWS access |
+| **2** | `export AWS_ACCESS_KEY_ID="your-access-key"` | Configure AWS credentials |
 | | `export AWS_SECRET_ACCESS_KEY="your-secret-key"` | |
-| | `export AWS_DEFAULT_REGION="us-east-1"` | |
-| **3** | `cd terraform` | Change to terraform directory |
-| | `terraform init` | Initialize Terraform and download providers |
-| **4** | `terraform fmt` | Format code for readability |
+| | `export AWS_DEFAULT_REGION="us-east-1"` | Set default AWS region |
+| **3** | `aws configure` | Alternative way to configure AWS credentials |
+| **4** | `cd terraform` | Navigate to Terraform directory |
+| **5** | `terraform init` | Initialize Terraform and download providers |
+| **6** | `terraform fmt` | Format Terraform code for readability |
 | | `terraform validate` | Verify configuration syntax |
-| **5** | `terraform plan -out=tfplan` | Create execution plan for review |
-| **6** | `terraform apply tfplan` | Create AWS infrastructure (VPC, EKS, IAM, etc.) |
-| **7** | `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region $(terraform output -raw region)` | Configure kubectl to use new EKS cluster |
-| **8** | `cd ..` | Return to project root |
-| | `kubectl get nodes` | Verify EKS nodes are running |
-| **9** | `kubectl apply -f kubernetes/service-account.yaml` | Create service account with IAM role |
-| **10** | `kubectl apply -f kubernetes/deployment.yaml` | Deploy application containers |
-| **11** | `kubectl apply -f kubernetes/service.yaml` | Create Kubernetes service |
-| **12** | `kubectl apply -f kubernetes/ingress.yaml` | Create ALB ingress resource |
-| **13** | `kubectl get pods` | Verify pods are running |
-| | `kubectl get svc` | Check service details |
-| | `kubectl get ingress` | Get ALB endpoint URL |
-| **14** | `curl http://$(kubectl get ingress -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')/get` | Test application is responding |
-| **15** | `cat public-url.txt` | View the public URL for your application |
+| **7** | `terraform plan -var "environment=dev" -var "docker_image=kennethreitz/httpbin" -out=tfplan` | Create execution plan with variables |
+| **8** | `terraform apply tfplan` | Create AWS infrastructure (VPC, EKS, IAM, etc.) |
+| **9** | `terraform output -raw eks_cluster_id` | Get EKS cluster ID for reference |
+| **10** | `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_id) --region $(terraform output -raw region)` | Configure kubectl to use new EKS cluster |
+| **11** | `kubectl get nodes` | Verify EKS nodes are running |
+| **12** | `cd ../kubernetes` | Navigate to Kubernetes manifests directory |
+| **13** | `export POD_S3_ACCESS_ROLE_ARN=$(terraform -chdir=../terraform output -raw pod_s3_access_role_arn)` | Export IAM role ARN for pod S3 access |
+| **14** | `export DOCKER_IMAGE="kennethreitz/httpbin"` | Set Docker image variable |
+| | `export DOCKER_IMAGE_TAG="latest"` | Set Docker image tag |
+| **15** | `envsubst < service-account.yaml | kubectl apply -f -` | Create service account with IAM role (with variable substitution) |
+| **16** | `envsubst < deployment.yaml | kubectl apply -f -` | Deploy application containers (with variable substitution) |
+| **17** | `kubectl apply -f service.yaml` | Create Kubernetes service |
+| **18** | `kubectl apply -f ingress.yaml` | Create ALB ingress resource |
+| **19** | `kubectl get pods -o wide` | Verify pods are running and check their status |
+| **20** | `kubectl get svc` | Check service details and cluster IP |
+| **21** | `kubectl get ingress -w` | Watch until ingress gets an external address (ALB endpoint URL) |
+| **22** | `ALB_URL=$(kubectl get ingress app-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')` | Store ALB URL in a variable |
+| **23** | `echo $ALB_URL > ../public-url.txt` | Save ALB URL to public-url.txt |
+| **24** | `curl http://$ALB_URL` | Test application is responding |
+| **25** | `kubectl logs -l app=app` | Check application logs for any issues |
+| **26** | `kubectl describe pods -l app=app` | Get detailed information about the pods |
+| **27** | `kubectl get events --sort-by=.metadata.creationTimestamp` | Check Kubernetes events for troubleshooting |
+| **28** | `aws eks list-nodegroups --cluster-name $(terraform -chdir=../terraform output -raw eks_cluster_id)` | Verify EKS node groups |
+| **29** | `aws elbv2 describe-load-balancers | grep DNSName` | Verify ALB creation via AWS CLI |
+| **30** | `cat ../public-url.txt` | View the public URL for your application |
+
+## Notes for Deployment
+
+1. **Prerequisites:**
+   - AWS CLI installed and configured
+   - kubectl installed
+   - Terraform installed (v1.0.0 or higher)
+   - envsubst utility (typically included in gettext package)
+
+2. **Security Considerations:**
+   - Your EKS cluster is configured with proper IAM roles and security groups
+   - Pods run with least privilege using the s3-reader-sa service account
+   - VPC is configured with public and private subnets, with nodes in private subnets
+   - Access to the EKS API is controlled via aws-auth ConfigMap
+
+3. **Architecture Highlights:**
+   - Multi-AZ deployment for high availability
+   - AWS Load Balancer Controller for ALB integration
+   - Private EKS nodes with public ALB
+   - VPC endpoints for secure access to AWS services
+   - IRSA (IAM Roles for Service Accounts) for pod security
+
+4. **Cleanup (when needed):**
+   ```
+   kubectl delete -f ingress.yaml
+   kubectl delete -f service.yaml
+   kubectl delete -f deployment.yaml
+   kubectl delete -f service-account.yaml
+   cd ../terraform
+   terraform destroy -var "environment=dev" -var "docker_image=kennethreitz/httpbin"
+   ```
+
+This deployment follows AWS best practices for security, using the principle of least privilege, proper network segmentation, and secure communication between components.
 
 This project demonstrates a robust, secure, and scalable deployment of containerized applications on AWS EKS using Terraform, focusing on security, automation, and AWS best practices. It was developed to fulfill the requirements of deploying a publicly available Docker image on EKS, implementing proper access controls, and establishing secure cross-account communication.
 
