@@ -4,32 +4,33 @@
 
 # EKS Project Deployment Commands Chart
 
-| Step | Phase | Command | Purpose |
-|------|-------|---------|---------|
-| **1** | **Setup** | `git clone https://github.com/yourusername/fintech_eks_kubernetes_project.git` | Get project code |
-| | | `cd fintech_eks_kubernetes_project` | Navigate to project directory |
-| **2** | **AWS Config** | `export AWS_ACCESS_KEY_ID="your-access-key"` | Configure AWS access |
-| | | `export AWS_SECRET_ACCESS_KEY="your-secret-key"` | |
-| | | `export AWS_DEFAULT_REGION="us-east-1"` | |
-| **3** | **Terraform Init** | `terraform init` | Initialize Terraform and download providers |
-| **4** | **Terraform Validation** | `terraform fmt` | Format code for readability |
-| | | `terraform validate` | Verify configuration syntax |
-| **5** | **Terraform Plan** | `terraform plan -out=tfplan` | Create execution plan for review |
-| **6** | **Terraform Apply** | `terraform apply tfplan` | Create AWS infrastructure (VPC, EKS, IAM, etc.) |
-| **7** | **Kubectl Config** | `aws eks update-kubeconfig --name fintech-eks-demo --region us-east-1` | Configure kubectl to use new EKS cluster |
-| **8** | **Verification** | `kubectl get nodes` | Verify EKS nodes are running |
-| **9** | **Load Balancer** | `kubectl apply -f aws-load-balancer-controller.yaml` | Deploy AWS Load Balancer Controller |
-| **10** | **Namespace** | `kubectl create namespace application-namespace` | Create dedicated app namespace |
-| **11** | **Service Account** | `kubectl apply -f kubernetes/service-account.yaml` | Create service account with IAM role |
-| **12** | **Application** | `kubectl apply -f kubernetes/deployment.yaml` | Deploy application containers |
-| **13** | **Network** | `kubectl apply -f kubernetes/service.yaml` | Create Kubernetes service |
-| | | `kubectl apply -f kubernetes/ingress.yaml` | Create ALB ingress resource |
-| **14** | **Status Check** | `kubectl get pods -n application-namespace` | Verify pods are running |
-| | | `kubectl get svc -n application-namespace` | Check service details |
-| | | `kubectl get ingress -n application-namespace` | Get ALB endpoint URL |
-| **15** | **Testing** | `curl http://<your-alb-address>/get` | Test application is responding |
-| **16** | **Monitoring** | `kubectl apply -f kubernetes/monitoring/` | Deploy monitoring resources (optional) |
+# EKS Project Deployment Commands Chart
 
+| Step | Command | Purpose |
+|------|---------|---------|
+| **1** | `git clone https://github.com/yourusername/eks-kubernetes-project.git` | Get project code |
+| | `cd eks-kubernetes-project` | Navigate to project directory |
+| **2** | `export AWS_ACCESS_KEY_ID="your-access-key"` | Configure AWS access |
+| | `export AWS_SECRET_ACCESS_KEY="your-secret-key"` | |
+| | `export AWS_DEFAULT_REGION="us-east-1"` | |
+| **3** | `cd terraform` | Change to terraform directory |
+| | `terraform init` | Initialize Terraform and download providers |
+| **4** | `terraform fmt` | Format code for readability |
+| | `terraform validate` | Verify configuration syntax |
+| **5** | `terraform plan -out=tfplan` | Create execution plan for review |
+| **6** | `terraform apply tfplan` | Create AWS infrastructure (VPC, EKS, IAM, etc.) |
+| **7** | `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region $(terraform output -raw region)` | Configure kubectl to use new EKS cluster |
+| **8** | `cd ..` | Return to project root |
+| | `kubectl get nodes` | Verify EKS nodes are running |
+| **9** | `kubectl apply -f kubernetes/service-account.yaml` | Create service account with IAM role |
+| **10** | `kubectl apply -f kubernetes/deployment.yaml` | Deploy application containers |
+| **11** | `kubectl apply -f kubernetes/service.yaml` | Create Kubernetes service |
+| **12** | `kubectl apply -f kubernetes/ingress.yaml` | Create ALB ingress resource |
+| **13** | `kubectl get pods` | Verify pods are running |
+| | `kubectl get svc` | Check service details |
+| | `kubectl get ingress` | Get ALB endpoint URL |
+| **14** | `curl http://$(kubectl get ingress -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')/get` | Test application is responding |
+| **15** | `cat public-url.txt` | View the public URL for your application |
 
 This project demonstrates a robust, secure, and scalable deployment of containerized applications on AWS EKS using Terraform, focusing on security, automation, and AWS best practices. It was developed to fulfill the requirements of deploying a publicly available Docker image on EKS, implementing proper access controls, and establishing secure cross-account communication.
 
