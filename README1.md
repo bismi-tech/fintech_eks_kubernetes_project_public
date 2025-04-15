@@ -2,92 +2,33 @@
 
 ## Project Summary for project
 
+# EKS Project Deployment Commands Chart
 
-# 1. Clone the repository
-git clone https://github.com/yourusername/fintech_eks_kubernetes_project.git
-cd fintech_eks_kubernetes_project
-# This gets the code onto your local machine and navigates to the project directory
-
-# 2. Configure AWS credentials
-export AWS_ACCESS_KEY_ID="your-access-key"
-export AWS_SECRET_ACCESS_KEY="your-secret-key"
-export AWS_DEFAULT_REGION="us-east-1"
-# Sets up your AWS credentials for Terraform to use when creating resources
-
-# 3. Initialize Terraform
-terraform init
-# Initializes your working directory containing Terraform configuration files
-# Downloads provider plugins and sets up the backend configuration
-
-# 4. Format and validate your Terraform code
-terraform fmt
-# Formats your Terraform files for consistent style and readability
-
-terraform validate
-# Validates the syntax and configuration of your Terraform files
-# Checks for errors before attempting to apply changes
-
-# 5. Create an execution plan
-terraform plan -out=tfplan
-# Creates an execution plan showing what actions Terraform will take
-# The -out flag saves the plan to a file that can be used in the apply step
-# This lets you review all changes before making them
-
-# 6. Apply the changes to create infrastructure
-terraform apply tfplan
-# Applies the changes required to reach the desired state in your configuration
-# Creates the VPC, subnets, EKS cluster, IAM roles, and all other resources
-# This step usually takes 15-20 minutes, primarily for the EKS cluster creation
-
-# 7. Configure kubectl to work with your new EKS cluster
-aws eks update-kubeconfig --name fintech-eks-demo --region us-east-1
-# Updates your local kubeconfig file with credentials for your EKS cluster
-# This allows kubectl commands to work with your cluster
-
-# 8. Verify cluster connectivity
-kubectl get nodes
-# Confirms that your EKS nodes are running and accessible
-
-# 9. Deploy the AWS Load Balancer Controller (if not included in Terraform)
-kubectl apply -f aws-load-balancer-controller.yaml
-# Installs the AWS Load Balancer Controller for managing ALB/NLB resources
-
-# 10. Create Kubernetes namespace for application
-kubectl create namespace application-namespace
-# Creates a dedicated namespace for your application resources
-
-# 11. Apply Kubernetes service account with IAM role annotation
-kubectl apply -f kubernetes/service-account.yaml
-# Creates the service account with IAM role annotation for IRSA
-
-# 12. Deploy the application
-kubectl apply -f kubernetes/deployment.yaml
-# Creates the deployment with the httpbin container
-
-# 13. Deploy the service and ingress resources
-kubectl apply -f kubernetes/service.yaml
-kubectl apply -f kubernetes/ingress.yaml
-# Creates the Kubernetes service and ingress resources to expose your application
-
-# 14. Verify deployment status
-kubectl get pods -n application-namespace
-# Checks that your application pods are running correctly
-
-kubectl get svc -n application-namespace
-# Shows the service details
-
-kubectl get ingress -n application-namespace
-# Displays the ALB address where your application is accessible
-
-# 15. Test the application
-curl http://<your-alb-address>/get
-# Tests that your application is responding correctly
-
-# Optional: Set up monitoring (if not included in Terraform)
-kubectl apply -f kubernetes/monitoring/
-# Applies monitoring resources like CloudWatch agent or Prometheus
-
-
+| Step | Phase | Command | Purpose |
+|------|-------|---------|---------|
+| **1** | **Setup** | `git clone https://github.com/yourusername/fintech_eks_kubernetes_project.git` | Get project code |
+| | | `cd fintech_eks_kubernetes_project` | Navigate to project directory |
+| **2** | **AWS Config** | `export AWS_ACCESS_KEY_ID="your-access-key"` | Configure AWS access |
+| | | `export AWS_SECRET_ACCESS_KEY="your-secret-key"` | |
+| | | `export AWS_DEFAULT_REGION="us-east-1"` | |
+| **3** | **Terraform Init** | `terraform init` | Initialize Terraform and download providers |
+| **4** | **Terraform Validation** | `terraform fmt` | Format code for readability |
+| | | `terraform validate` | Verify configuration syntax |
+| **5** | **Terraform Plan** | `terraform plan -out=tfplan` | Create execution plan for review |
+| **6** | **Terraform Apply** | `terraform apply tfplan` | Create AWS infrastructure (VPC, EKS, IAM, etc.) |
+| **7** | **Kubectl Config** | `aws eks update-kubeconfig --name fintech-eks-demo --region us-east-1` | Configure kubectl to use new EKS cluster |
+| **8** | **Verification** | `kubectl get nodes` | Verify EKS nodes are running |
+| **9** | **Load Balancer** | `kubectl apply -f aws-load-balancer-controller.yaml` | Deploy AWS Load Balancer Controller |
+| **10** | **Namespace** | `kubectl create namespace application-namespace` | Create dedicated app namespace |
+| **11** | **Service Account** | `kubectl apply -f kubernetes/service-account.yaml` | Create service account with IAM role |
+| **12** | **Application** | `kubectl apply -f kubernetes/deployment.yaml` | Deploy application containers |
+| **13** | **Network** | `kubectl apply -f kubernetes/service.yaml` | Create Kubernetes service |
+| | | `kubectl apply -f kubernetes/ingress.yaml` | Create ALB ingress resource |
+| **14** | **Status Check** | `kubectl get pods -n application-namespace` | Verify pods are running |
+| | | `kubectl get svc -n application-namespace` | Check service details |
+| | | `kubectl get ingress -n application-namespace` | Get ALB endpoint URL |
+| **15** | **Testing** | `curl http://<your-alb-address>/get` | Test application is responding |
+| **16** | **Monitoring** | `kubectl apply -f kubernetes/monitoring/` | Deploy monitoring resources (optional) |
 
 
 This project demonstrates a robust, secure, and scalable deployment of containerized applications on AWS EKS using Terraform, focusing on security, automation, and AWS best practices. It was developed to fulfill the requirements of deploying a publicly available Docker image on EKS, implementing proper access controls, and establishing secure cross-account communication.
